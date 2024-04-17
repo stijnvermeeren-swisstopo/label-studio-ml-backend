@@ -1,3 +1,7 @@
+# temporary, installed editable packages are here.
+src/
+
+
 # data and database files
 data/
 *.db

@@ -47,7 +47,6 @@ class NewModel(LabelStudioMLBase):
             predictions_path=predictions_path,
             skip_draw_predictions=skip_draw_predictions,
         )
-        print(f"Prediction: {prediction}")
         try:
             pdf_file_name = list(prediction.keys())[0]
             prediction = prediction[pdf_file_name]

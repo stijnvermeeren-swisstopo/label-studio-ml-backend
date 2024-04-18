@@ -1,6 +1,9 @@
+"""Tesseract OCR model for Label Studio."""
+
 import io
 import logging
 import os
+from pathlib import Path
 
 import boto3
 import pytesseract as pt
@@ -20,16 +23,19 @@ AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
 AWS_SESSION_TOKEN = os.environ.get("AWS_SESSION_TOKEN")
 AWS_ENDPOINT = os.environ.get("AWS_ENDPOINT")
 
-S3_TARGET = boto3.resource('s3',
-                           endpoint_url=AWS_ENDPOINT,
-                           aws_access_key_id=AWS_ACCESS_KEY_ID,
-                           aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                           aws_session_token=AWS_SESSION_TOKEN,
-                           config=boto3.session.Config(signature_version='s3v4'),
-                           verify=False)
+S3_TARGET = boto3.resource(
+    "s3",
+    endpoint_url=AWS_ENDPOINT,
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    aws_session_token=AWS_SESSION_TOKEN,
+    config=boto3.session.Config(signature_version="s3v4"),
+    verify=False,
+)
 
 
 class BBOXOCR(LabelStudioMLBase):
+    """Model for OCR using Tesseract."""
 
     def load_image(self, img_path_url, task_id):
         # load an s3 image, this is very basic demonstration code
@@ -39,45 +45,45 @@ class BBOXOCR(LabelStudioMLBase):
             key = "/".join(img_path_url.split("/")[3:])
 
             obj = S3_TARGET.Object(bucket_name, key).get()
-            data = obj['Body'].read()
+            data = obj["Body"].read()
             image = Image.open(io.BytesIO(data))
             return image
         else:
-            filepath = self.get_local_path(
-                img_path_url,
-                ls_access_token=LABEL_STUDIO_ACCESS_TOKEN,
-                ls_host=LABEL_STUDIO_HOST,
-                task_id=task_id
-            )
+            print(img_path_url)
+            # some hack to make image loading work:
+            file_name = img_path_url.split("/")[-1]
+            filepath = Path("/data/test_png/") / file_name
+
+            # filepath = self.get_local_path(
+            #     img_path_url,
+            #     ls_access_token=LABEL_STUDIO_ACCESS_TOKEN,
+            #     ls_host=LABEL_STUDIO_HOST,
+            #     task_id=task_id
+            # )
             return Image.open(filepath)
 
     def predict(self, tasks, **kwargs):
         # extract task metadata: labels, from_name, to_name and other
-        from_name, to_name, value = self.label_interface.get_first_tag_occurence(
-            'TextArea',
-            'Image'
-        )
+        from_name, to_name, value = self.label_interface.get_first_tag_occurence("TextArea", "Image")
         task = tasks[0]
         img_path_url = task["data"][value]
 
-        context = kwargs.get('context')
+        context = kwargs.get("context")
         if context:
             if not context["result"]:
                 return []
 
-            image = self.load_image(img_path_url, task.get('id'))
+            image = self.load_image(img_path_url, task.get("id"))
 
-            result = context.get('result')[-1]
+            result = context.get("result")[-1]
             meta = self._extract_meta({**task, **result})
             x = meta["x"] * meta["original_width"] / 100
             y = meta["y"] * meta["original_height"] / 100
             w = meta["width"] * meta["original_width"] / 100
             h = meta["height"] * meta["original_height"] / 100
 
-            result_text = pt.image_to_string(
-                image.crop((x, y, x + w, y + h)),
-                config=OCR_config
-            ).strip()
+            result_text = pt.image_to_string(image.crop((x, y, x + w, y + h)), config=OCR_config).strip()
+            print(result_text)
             meta["text"] = result_text
             temp = {
                 "original_width": meta["original_width"],
@@ -89,20 +95,15 @@ class BBOXOCR(LabelStudioMLBase):
                     "width": w / meta["original_width"] * 100,
                     "height": h / meta["original_height"] * 100,
                     "rotation": 0,
-                    "text": [
-                        meta["text"]
-                    ]
+                    "text": [meta["text"]],
                 },
                 "id": meta["id"],
                 "from_name": from_name,
-                "to_name": meta['to_name'],
+                "to_name": meta["to_name"],
                 "type": "textarea",
-                "origin": "manual"
+                "origin": "manual",
             }
-            return [{
-                'result': [temp, result],
-                'score': 0
-            }]
+            return [{"result": [temp, result], "score": 0}]
         else:
             return []
 
@@ -110,14 +111,14 @@ class BBOXOCR(LabelStudioMLBase):
     def _extract_meta(task):
         meta = dict()
         if task:
-            meta['id'] = task['id']
-            meta['from_name'] = task['from_name']
-            meta['to_name'] = task['to_name']
-            meta['type'] = task['type']
-            meta['x'] = task['value']['x']
-            meta['y'] = task['value']['y']
-            meta['width'] = task['value']['width']
-            meta['height'] = task['value']['height']
-            meta["original_width"] = task['original_width']
-            meta["original_height"] = task['original_height']
+            meta["id"] = task["id"]
+            meta["from_name"] = task["from_name"]
+            meta["to_name"] = task["to_name"]
+            meta["type"] = task["type"]
+            meta["x"] = task["value"]["x"]
+            meta["y"] = task["value"]["y"]
+            meta["width"] = task["value"]["width"]
+            meta["height"] = task["value"]["height"]
+            meta["original_width"] = task["original_width"]
+            meta["original_height"] = task["original_height"]
         return meta

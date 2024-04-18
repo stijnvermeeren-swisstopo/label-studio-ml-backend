@@ -7,7 +7,7 @@ WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PORT=${PORT:-9090} \
+    PORT=${PORT:-9095} \
     PIP_CACHE_DIR=/.cache
 
 # Update the base OS and install Tesseract
@@ -26,6 +26,6 @@ RUN --mount=type=cache,target=${PIP_CACHE_DIR},sharing=locked \
 
 COPY . .
 
-EXPOSE 9090
+EXPOSE 9095
 
 CMD gunicorn --preload --bind :$PORT --workers 1 --threads 8 --timeout 0 _wsgi:app

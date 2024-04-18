@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from stratigraphy.main import start_pipeline
+from utils import build_model_predictions
 
-from boreholes_backend.src.utils import build_model_predictions
 from label_studio_ml.model import LabelStudioMLBase
 from label_studio_ml.response import ModelResponse
 
@@ -33,15 +33,11 @@ class NewModel(LabelStudioMLBase):
         file_name, page_number = file_name.split("_")
         page_number = int(page_number.split(".")[0])
         file_name = file_name + ".pdf"
-        input_directory = (
-            Path("/Users/renato.durrer/repos/swisstopo/swissgeol-boreholes-dataextraction/data/data_v2/validation/")
-            / file_name
-        )
-        ground_truth_path = Path(
-            "/Users/renato.durrer/repos/swisstopo/swissgeol-boreholes-dataextraction/data/data_v2/validation/ground_truth.json"
-        )
-        out_directory = Path("/Users/renato.durrer/repos/swisstopo/_temp/")
-        predictions_path = Path("/Users/renato.durrer/repos/swisstopo/_temp/predictions.json")
+        # Adjust the path below for now. Make sure volume is mounted in docker container.
+        input_directory = Path("/data/validation/") / file_name
+        ground_truth_path = Path("/data/validation/ground_truth.json")
+        out_directory = Path("/data/_temp/")
+        predictions_path = Path("/data/_temp/predictions.json")
         skip_draw_predictions = True
 
         prediction = start_pipeline(
@@ -51,11 +47,16 @@ class NewModel(LabelStudioMLBase):
             predictions_path=predictions_path,
             skip_draw_predictions=skip_draw_predictions,
         )
-        pdf_file_name = list(prediction.keys())[0]
-        prediction = prediction[pdf_file_name]
-        page_prediction = prediction.pages[page_number]
+        print(f"Prediction: {prediction}")
+        try:
+            pdf_file_name = list(prediction.keys())[0]
+            prediction = prediction[pdf_file_name]
+            page_prediction = prediction.pages[page_number]
 
-        model_predictions = build_model_predictions(page_prediction)
+            model_predictions = build_model_predictions(page_prediction)
+        except IndexError:
+            print("No prediction found.")
+            model_predictions = []
         return ModelResponse(predictions=model_predictions)
 
     def fit(self, event, data, **kwargs):

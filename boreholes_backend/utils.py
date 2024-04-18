@@ -2,7 +2,7 @@
 
 import logging
 
-from stratigraphy.util.predictions import LayerPredictions, PagePredictions
+from stratigraphy.util.predictions import LayerPrediction, PagePredictions
 
 logger = logging.getLogger(__name__)
 
@@ -107,11 +107,11 @@ def build_model_predictions(page_prediction: PagePredictions) -> list[dict]:
     return [model_predictions]
 
 
-def create_ls_result(layer: LayerPredictions, page_prediction: PagePredictions, value: dict, label: str) -> list[dict]:
+def create_ls_result(layer: LayerPrediction, page_prediction: PagePredictions, value: dict, label: str) -> list[dict]:
     """Generate the label-studio predictions object for a single layer and label.
 
     Args:
-        layer (LayerPredictions): The layer prediction object.
+        layer (LayerPrediction): The layer prediction object.
         page_prediction (PagePredictions): The page prediction object.
         value (dict): The value object for the label.
         label (str): The label name.

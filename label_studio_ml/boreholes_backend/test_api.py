@@ -1,4 +1,4 @@
-"""This file contains tests for the API of your model. You can run these tests by installing test requirements:
+"""This file contains tests for the API of your model. You can run these tests by installing test requirements.
 
     ```bash
     pip install -r requirements-test.txt
@@ -12,20 +12,20 @@ Then execute `pytest` in the directory of this file.
 import json
 
 import pytest
-from model import NewModel
+from model import LayerExtractionModel
 
 
 @pytest.fixture
-def client():
+def client():  # noqa: D103
     from _wsgi import init_app
 
-    app = init_app(model_class=NewModel)
+    app = init_app(model_class=LayerExtractionModel)
     app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
 
 
-def test_predict(client):
+def test_predict(client):  # noqa: D103
     request = {
         "tasks": [
             {

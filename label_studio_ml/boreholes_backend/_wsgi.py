@@ -4,7 +4,7 @@ import logging
 import logging.config
 import os
 
-from model import NewModel
+from model import LayerExtractionModel
 
 from label_studio_ml.api import init_app
 
@@ -122,11 +122,11 @@ if __name__ == "__main__":
         kwargs.update(parse_kwargs())
 
     if args.check:
-        print('Check "' + NewModel.__name__ + '" instance creation..')
-        model = NewModel(**kwargs)
+        print('Check "' + LayerExtractionModel.__name__ + '" instance creation..')
+        model = LayerExtractionModel(**kwargs)
 
     app = init_app(
-        model_class=NewModel,
+        model_class=LayerExtractionModel,
         basic_auth_user=args.basic_auth_user,
         basic_auth_pass=args.basic_auth_pass,
     )
@@ -135,4 +135,4 @@ if __name__ == "__main__":
 
 else:
     # for uWSGI use
-    app = init_app(model_class=NewModel)
+    app = init_app(model_class=LayerExtractionModel)

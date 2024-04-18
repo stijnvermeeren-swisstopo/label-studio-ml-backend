@@ -3,6 +3,7 @@
 import io
 import logging
 import os
+import re
 from pathlib import Path
 
 import boto3
@@ -49,7 +50,6 @@ class BBOXOCR(LabelStudioMLBase):
             image = Image.open(io.BytesIO(data))
             return image
         else:
-            print(img_path_url)
             # some hack to make image loading work:
             file_name = img_path_url.split("/")[-1]
             filepath = Path("/data/test_png/") / file_name
@@ -67,8 +67,8 @@ class BBOXOCR(LabelStudioMLBase):
         from_name, to_name, value = self.label_interface.get_first_tag_occurence("TextArea", "Image")
         task = tasks[0]
         img_path_url = task["data"][value]
-
         context = kwargs.get("context")
+        print(f"{context=}")
         if context:
             if not context["result"]:
                 return []
@@ -83,7 +83,13 @@ class BBOXOCR(LabelStudioMLBase):
             h = meta["height"] * meta["original_height"] / 100
 
             result_text = pt.image_to_string(image.crop((x, y, x + w, y + h)), config=OCR_config).strip()
-            print(result_text)
+
+            # check if the label is Depth Interval; if so, extract the depth interval values
+            for result in context["result"]:
+                if result["from_name"] == "label":  # noqa: SIM102
+                    if result["value"]["labels"] == ["Depth Interval"]:
+                        result_text = extract_depth_interval(result_text)
+
             meta["text"] = result_text
             temp = {
                 "original_width": meta["original_width"],
@@ -122,3 +128,42 @@ class BBOXOCR(LabelStudioMLBase):
             meta["original_width"] = task["original_width"]
             meta["original_height"] = task["original_height"]
         return meta
+
+
+def extract_depth_interval(result_text: str) -> str:
+    """Extract depth interval from OCR result.
+
+    Args:
+        result_text (str): The OCR result text.
+
+    Returns:
+        str: The extracted depth interval.
+    """
+    numbers = result_text.split("\n")
+    if len(numbers) >= 2:
+        try:
+            start = get_number_from_string(numbers[0])
+            end = get_number_from_string(numbers[-1])
+            return f"start: {start} end: {end}"
+        except AttributeError:  # If no there is no number in the string
+            return "start: end: "
+    else:
+        print(result_text)
+        return "start: end: "
+
+
+def get_number_from_string(string: str) -> float:
+    """Extract the first number from a string.
+
+    Supports various notation of numbers including scientific notation.
+
+    Args:
+        string (str): The string to extract the number from.
+
+    Returns:
+        float: The extracted number.
+    """
+    number = re.search("[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", string).group()
+    number = number.replace(",", ".")
+    return abs(float(number))  # Regex should not recognize the minus sign as part of the number.
+    # TODO: Adjust regex such that no negative numbers are detected.

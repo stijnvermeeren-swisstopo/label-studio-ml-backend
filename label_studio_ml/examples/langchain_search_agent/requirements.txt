@@ -1,3 +1,0 @@
-langchain
-google-api-python-client
-openai

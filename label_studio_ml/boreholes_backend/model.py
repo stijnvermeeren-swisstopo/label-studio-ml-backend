@@ -10,7 +10,7 @@ from label_studio_ml.model import LabelStudioMLBase
 from label_studio_ml.response import ModelResponse
 
 
-class NewModel(LabelStudioMLBase):
+class LayerExtractionModel(LabelStudioMLBase):
     """Custom ML Backend model."""
 
     def setup(self):

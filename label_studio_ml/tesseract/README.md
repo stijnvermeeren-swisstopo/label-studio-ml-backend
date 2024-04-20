@@ -1,3 +1,5 @@
+This model contains minimal adjustments to the published one in the [label-studio-ml-backend repository](https://github.com/HumanSignal/label-studio-ml-backend/tree/master/label_studio_ml/examples/tesseract)
+
 ## Interactive BBOX OCR using Tesseract
 Using an OCR engine for Interactive ML-Assisted Labelling, this functionality
 can speed up annotation for layout detection, classification and recognition
@@ -22,12 +24,12 @@ Launch LabelStudio. You can follow the guide from the [official documentation](h
 
    ```
    docker run -it \
-      -p 8080:8080 \
-      -v `pwd`/mydata:/label-studio/data \
+      -p 9095:9095 \
+      -v PATH_TO_DATA_VOLUME \
       heartexlabs/label-studio:latest
    ```
 
-   Optionally, you may enable local file serving in Label Studio
+   Optionally, you may enable local file serving in Label Studio (NOTE: This has not been tested for the stratigraphy purpose)
 
    ```
    docker run -it \
@@ -40,56 +42,10 @@ Launch LabelStudio. You can follow the guide from the [official documentation](h
    If you're using local file serving, be sure to get a copy of the API token from
    Label Studio to connect the model.
 
-#### 2. Create Label Studio project
-
-Create a new project for Tesseract OCR. In the project **Settings** set up the **Labeling Interface**.
-
-   Fill in the following template code. It's important to specify `smart="true"` in RectangleLabels.
-   ```
-   <View>    
-      <Image name="image" value="$ocr" zoom="true" zoomControl="false"
-            rotateControl="true" width="100%" height="100%"
-            maxHeight="auto" maxWidth="auto"/>
-      
-      <RectangleLabels name="bbox" toName="image" strokeWidth="1" smart="true">
-         <Label value="Label1" background="green"/>
-         <Label value="Label2" background="blue"/>
-         <Label value="Label3" background="red"/>
-      </RectangleLabels>
-
-      <TextArea name="transcription" toName="image" 
-      editable="true" perRegion="true" required="false" 
-      maxSubmissions="1" rows="5" placeholder="Recognized Text" 
-      displayMode="region-list"/>
-   </View>
-   ```
-
-#### 3. Install Tesseract OCR
-
-Download the Label Studio Machine Learning backend repository.
-   ```
-   git clone https://github.com/humansignal/label-studio-ml-backend
-   cd label-studio-ml-backend/label_studio_ml/examples/tesseract
-   ```
-
-Configure parameters in `example.env` file:
-
-   ```
-   LABEL_STUDIO_HOST=http://host.docker.internal:8080
-   LABEL_STUDIO_ACCESS_TOKEN=<optional token for local file access>
-
-   AWS_ACCESS_KEY_ID=<set to MINIO_ROOT_USER for minio example>
-   AWS_SECRET_ACCESS_KEY=<set to MINIO_ROOT_PASSWORD for minio example>
-   AWS_ENDPOINT=http://host.docker.internal:9000
-
-   MINIO_ROOT_USER=<username>
-   MINIO_ROOT_PASSWORD=<password>
-   MINIO_API_CORS_ALLOW_ORIGIN=*
-   ```
-
-Depending on your data ingestion method, several configurations are possible:
 
 **Local File Storage**
+Developers Note: This is one option on how we can exchange files to the backend services in the future.
+
 If you opted to use Label Studio Local File Storage, be sure to set the `LABEL_STUDIO_HOST` and `LABEL_STUDIO_ACCESS_TOKEN` variables. 
 
 **S3-Compatible Storage (Minio or AWS S3)**

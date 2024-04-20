@@ -5,10 +5,10 @@ This guide describes the simplest way to start using ML backend with Label Studi
 1. Start Machine Learning backend on `http://localhost:9090` with prebuilt image:
 
 ```bash
-docker-compose up
+docker-compose up stratigraphy-ml-backend
 ```
 
-2. Validate that backend is running
+1. Validate that backend is running
 
 ```bash
 $ curl http://localhost:9090/
@@ -39,7 +39,7 @@ pip install -r requirements.txt
 Then you can start the ML backend:
 
 ```bash
-label-studio-ml start ./dir_with_your_model
+label-studio-ml start ./boreholes_backend
 ```
 
 # Configuration
@@ -52,7 +52,3 @@ The following common parameters are available:
 - `LOG_LEVEL` - set the log level for the model server
 - `WORKERS` - specify the number of workers for the model server
 - `THREADS` - specify the number of threads for the model server
-
-# Customization
-
-The ML backend can be customized by adding your own models and logic inside the `./dir_with_your_model` directory. 

@@ -1,3 +1,5 @@
+This repository is taken and adapted from [label-studio-ml-backend](https://github.com/HumanSignal/label-studio-ml-backend).
+
 # What is the Label Studio ML backend?
 
 The Label Studio ML backend is an SDK that lets you wrap your machine learning code and turn it into a web server.
@@ -6,43 +8,53 @@ The web server can be connected to a running [Label Studio](https://labelstud.io
 If you just need to load static pre-annotated data into Label Studio, running an ML backend might be overkill for you.
 Instead, you can [import preannotated data](https://labelstud.io/guide/predictions.html).
 
+## Run the ML Backend
 
 ### 1. Installation
 
 Download and install `label-studio-ml` from the repository:
 
 ```bash
-git clone https://github.com/HumanSignal/label-studio-ml-backend.git
-cd label-studio-ml-backend/
-pip install -e .
+git clone https://github.com/redur/label-studio-ml-backend.git
 ```
 
-### 2. Create empty ML backend:
+The code comes with two different ml-models that have their own respective endpoint. The directory structure for both models are the same. Information regarding the respective ML Models are found in their readmes located in the respective directories.
 
-```bash
-label-studio-ml create my_ml_backend
-```
+### 2. Prepare the services
+The ML Models require the data available in their respective container. Therefore we need to ensure that the right directories are mounted. (Note: this should be deprecated once we move to S3 datastorage.).
 
-You can go to the `my_ml_backend` directory and modify the code to implement your own inference logic.
+The `stratigraphy-ml-backend` needs the original pdf files used for the stratigraphy algorithm. Create a directory containing the files and add it in the `docker-compose.yml` for the service `stratigraphy-ml-backend`.
+
+The `tesseract` service requires the png files of the extracted layers from the stratigraphy algorithm. Place the corresponding files in a directory and mount it in the `docker-compose.yml` for the `tesseract` service.
+
+### 3. Run the services
+Run `docker-compose build` and `docker-compose up` to run both services.
+Two endpoints will be created. The `stratigraphy-ml-backend` will listen on port `9090` and `tesseract` will listen on port `9095`. You can now go to your label-studio front end and add the ML Backends in the UI. Note: You will have to find the IP adress of the docker containers first. You can find them in the logs. If you run them locally, it is your localhost.
+
+
+## Extend / Adjust the Backend
+
+### 1. File Structure
+You can go to the `label_studio_ml/MODEL_NAME` directory and modify the code to implement your own inference logic.
 The directory structure should look like this:
 
 ```
-my_ml_backend/
+MODEL_NAME/
 ├── Dockerfile
-├── docker-compose.yml
 ├── model.py
 ├── _wsgi.py
 ├── README.md
 └── requirements.txt
 ```
 
-`Dockefile` and `docker-compose.yml` are used to run the ML backend with Docker.
+`Dockefile` is used to run the ML backend with Docker.
 `model.py` is the main file where you can implement your own training and inference logic.
 `_wsgi.py` is a helper file that is used to run the ML backend with Docker (you don't need to modify it)
 `README.md` is a readme file with instructions on how to run the ML backend.
 `requirements.txt` is a file with Python dependencies.
 
-### 3. Implement prediction logic
+
+### 2. Implement prediction logic
 
 In your model directory, locate the `model.py` file (for example, `my_ml_backend/model.py`).
 
@@ -65,7 +77,7 @@ The `predict` method is used to make predictions for the tasks. It uses the foll
 
 Once you implement the `predict` method, you can see predictions from the connected ML backend in Label Studio.
 
-### 4. Implement training logic (optional)
+### 3. Implement training logic (optional)
 
 You can also implement the `fit` method to train your model. The `fit` method is typically used to train the model on
 the labeled data, although it can be used for any arbitrary operations that require data persistence (for example,
@@ -85,7 +97,7 @@ def fit(self, event, data, **kwargs):
 
 with
 
-- `event`: event type can be `'ANNOTATION_CREATED'`, `'ANNOTATION_UPDATED', etc.
+- `event`: event type can be `'ANNOTATION_CREATED'`, `'ANNOTATION_UPDATED'`, etc.
 - `data` the payload received from the event (check more
   on [Webhook event reference](https://labelstud.io/guide/webhook_reference.html))
 
@@ -110,7 +122,7 @@ and to return the local path to it. The URL can be: LS uploaded file, LS Local S
 
 #### Run without Docker
 
-To run without docker (for example, for debugging purposes), you can use the following command:
+To run without docker (for example, for debugging purposes), you can use the following command: (make sure to install the dependencies beforehand).
 
 ```bash
 label-studio-ml start my_ml_backend
@@ -162,7 +174,7 @@ label-studio-ml deploy gcp {ml-backend-local-dir} \
 # Troubleshooting
 
 ## File not found
-Mount the right files
+Make sure the right directories are mounted to your docker containers.
 
 ## Troubleshooting Pip Cache Reset in Docker Images
 

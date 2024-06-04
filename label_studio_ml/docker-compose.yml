@@ -43,6 +43,7 @@ services:
     volumes:
       - "./data/server:/data"
       - "/Users/renato.durrer/repos/swisstopo/label_studio_data/test_png:/data/test_png"
+      - "/Users/renato.durrer/repos/swisstopo/swissgeol-boreholes-dataextraction/data/data_v2/validation/:/data/validation"
     environment:
       - LOG_LEVEL=DEBUG
 

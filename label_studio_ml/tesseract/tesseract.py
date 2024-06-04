@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 import boto3
-import pytesseract as pt
+import fitz
 from PIL import Image
 
 from label_studio_ml.model import LabelStudioMLBase
@@ -66,14 +66,17 @@ class BBOXOCR(LabelStudioMLBase):
         # extract task metadata: labels, from_name, to_name and other
         from_name, to_name, value = self.label_interface.get_first_tag_occurence("TextArea", "Image")
         task = tasks[0]
-        img_path_url = task["data"][value]
+        print(task["data"][value])
+        pdf_path_url = task["data"][value].split("_")[:-1]
+        page_number = task["data"][value].split("_")[-1]
+        pdf_path_url = "".join(pdf_path_url) + ".pdf"
+        page_number = int(page_number.split(".")[0])
+
         context = kwargs.get("context")
-        print(f"{context=}")
         if context:
             if not context["result"]:
                 return []
-
-            image = self.load_image(img_path_url, task.get("id"))
+            document = fitz.open(pdf_path_url)
 
             result = context.get("result")[-1]
             meta = self._extract_meta({**task, **result})
@@ -82,7 +85,8 @@ class BBOXOCR(LabelStudioMLBase):
             w = meta["width"] * meta["original_width"] / 100
             h = meta["height"] * meta["original_height"] / 100
 
-            result_text = pt.image_to_string(image.crop((x, y, x + w, y + h)), config=OCR_config).strip()
+            page = document[page_number]
+            result_text = fitz.utils.get_text(page, "words", clip=[x, y, x + w, y + h])
 
             # check if the label is Depth Interval; if so, extract the depth interval values
             for result in context["result"]:

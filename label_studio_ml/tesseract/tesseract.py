@@ -100,7 +100,6 @@ class BBOXOCR(LabelStudioMLBase):
                 if result["from_name"] == "label":  # noqa: SIM102
                     if result["value"]["labels"] == ["Depth Interval"]:
                         result_text = extract_depth_interval(result_text)
-                        print(f"depth interval: {result_text}")
 
             temp = {
                 "original_width": meta["original_width"],
@@ -151,10 +150,12 @@ def extract_depth_interval(result_text: str) -> str:
         str: The extracted depth interval.
     """
     numbers = get_numbers_from_string(result_text)
+    if len(numbers) == 1:
+        return f"start: 0 end: {numbers[0]}"
     if len(numbers) >= 2:
         return f"start: {numbers[0]} end: {numbers[-1]}"
     else:
-        print(f"Text is zero or one line: {result_text}. The recognized numbers are {numbers}.")
+        print(f"No number was detected in the bounding box: {result_text}. The recognized numbers are {numbers}.")
         return "start: end: "
 
 
@@ -172,5 +173,4 @@ def get_numbers_from_string(string: str) -> float:
     numbers = re.findall("-?([0-9]+([\.,][0-9]+)?)", string)
     numbers = [number[0].replace(",", ".") for number in numbers]
     numbers = [abs(float(number)) for number in numbers]
-    return numbers  # Regex should not recognize the minus sign as part of the number.
-    # TODO: Adjust regex such that no negative numbers are detected.
+    return numbers

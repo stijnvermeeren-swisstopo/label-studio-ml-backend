@@ -69,14 +69,16 @@ class BBOXOCR(LabelStudioMLBase):
         print(task["data"][value])
         pdf_path_url = task["data"][value].split("_")[:-1]
         page_number = task["data"][value].split("_")[-1]
-        pdf_path_url = "".join(pdf_path_url) + ".pdf"
         page_number = int(page_number.split(".")[0])
+        pdf_path_url = "".join(pdf_path_url) + ".pdf"
+        pdf_name = pdf_path_url.split("/")[-1]
+        pdf_path = Path("/data/validation/") / pdf_name
 
         context = kwargs.get("context")
         if context:
             if not context["result"]:
                 return []
-            document = fitz.open(pdf_path_url)
+            document = fitz.open(pdf_path)
 
             result = context.get("result")[-1]
             meta = self._extract_meta({**task, **result})
@@ -86,15 +88,20 @@ class BBOXOCR(LabelStudioMLBase):
             h = meta["height"] * meta["original_height"] / 100
 
             page = document[page_number]
-            result_text = fitz.utils.get_text(page, "words", clip=[x, y, x + w, y + h])
+            result_text = fitz.utils.get_text(page, "words", clip=[x / 3, y / 3, (x + w) / 3, (y + h) / 3])
+            print(result_text)
+            result_text = " ".join(
+                word[4] for word in result_text
+            )  # get_text returns a list of tuples; the fifth element is the text
+            print(result_text)
 
             # check if the label is Depth Interval; if so, extract the depth interval values
             for result in context["result"]:
                 if result["from_name"] == "label":  # noqa: SIM102
                     if result["value"]["labels"] == ["Depth Interval"]:
                         result_text = extract_depth_interval(result_text)
+                        print(f"depth interval: {result_text}")
 
-            meta["text"] = result_text
             temp = {
                 "original_width": meta["original_width"],
                 "original_height": meta["original_height"],
@@ -105,7 +112,7 @@ class BBOXOCR(LabelStudioMLBase):
                     "width": w / meta["original_width"] * 100,
                     "height": h / meta["original_height"] * 100,
                     "rotation": 0,
-                    "text": [meta["text"]],
+                    "text": [result_text],
                 },
                 "id": meta["id"],
                 "from_name": from_name,
@@ -152,7 +159,7 @@ def extract_depth_interval(result_text: str) -> str:
         except AttributeError:  # If no there is no number in the string
             return "start: end: "
     else:
-        print(result_text)
+        print(f"Text is zero or one line: {result_text}")
         return "start: end: "
 
 

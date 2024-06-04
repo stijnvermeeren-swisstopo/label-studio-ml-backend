@@ -9,5 +9,6 @@ werkzeug
 gunicorn
 pytest
 pytest-cov
+PyMuPDF>=1.23.26
 
 label-studio-ml @ git+https://github.com/heartexlabs/label-studio-ml-backend.git

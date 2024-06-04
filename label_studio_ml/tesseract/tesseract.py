@@ -88,12 +88,12 @@ class BBOXOCR(LabelStudioMLBase):
             h = meta["height"] * meta["original_height"] / 100
 
             page = document[page_number]
-            result_text = fitz.utils.get_text(page, "words", clip=[x / 3, y / 3, (x + w) / 3, (y + h) / 3])
-            print(result_text)
+            result_text = fitz.utils.get_text(
+                page, "words", clip=[x / 3, y / 3, (x + w) / 3, (y + h) / 3]
+            )  # we use a magnifier of three, that's why we have to divide by three.
             result_text = " ".join(
                 word[4] for word in result_text
             )  # get_text returns a list of tuples; the fifth element is the text
-            print(result_text)
 
             # check if the label is Depth Interval; if so, extract the depth interval values
             for result in context["result"]:
@@ -150,20 +150,15 @@ def extract_depth_interval(result_text: str) -> str:
     Returns:
         str: The extracted depth interval.
     """
-    numbers = result_text.split("\n")
+    numbers = get_numbers_from_string(result_text)
     if len(numbers) >= 2:
-        try:
-            start = get_number_from_string(numbers[0])
-            end = get_number_from_string(numbers[-1])
-            return f"start: {start} end: {end}"
-        except AttributeError:  # If no there is no number in the string
-            return "start: end: "
+        return f"start: {numbers[0]} end: {numbers[-1]}"
     else:
-        print(f"Text is zero or one line: {result_text}")
+        print(f"Text is zero or one line: {result_text}. The recognized numbers are {numbers}.")
         return "start: end: "
 
 
-def get_number_from_string(string: str) -> float:
+def get_numbers_from_string(string: str) -> float:
     """Extract the first number from a string.
 
     Supports various notation of numbers including scientific notation.
@@ -174,7 +169,8 @@ def get_number_from_string(string: str) -> float:
     Returns:
         float: The extracted number.
     """
-    number = re.search("[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", string).group()
-    number = number.replace(",", ".")
-    return abs(float(number))  # Regex should not recognize the minus sign as part of the number.
+    numbers = re.findall("-?([0-9]+([\.,][0-9]+)?)", string)
+    numbers = [number[0].replace(",", ".") for number in numbers]
+    numbers = [abs(float(number)) for number in numbers]
+    return numbers  # Regex should not recognize the minus sign as part of the number.
     # TODO: Adjust regex such that no negative numbers are detected.

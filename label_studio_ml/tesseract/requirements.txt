@@ -2,7 +2,6 @@ Jinja2
 boto3
 click
 itsdangerous
-pytesseract
 rq
 supervisor
 werkzeug
@@ -11,4 +10,5 @@ pytest
 pytest-cov
 PyMuPDF>=1.23.26
 
-label-studio-ml @ git+https://github.com/heartexlabs/label-studio-ml-backend.git
+label_studio_sdk @ git+https://github.com/heartexlabs/label-studio-sdk.git@be15a785d152cf5d49b9f27be225d7c4f6b4e001
+label-studio-ml @ git+https://github.com/heartexlabs/label-studio-ml-backend.git@78be6054b68a5e0a9ac7e1eccab4c551f12b3e99

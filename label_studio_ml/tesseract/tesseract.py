@@ -79,6 +79,7 @@ class BBOXOCR(LabelStudioMLBase):
             if not context["result"]:
                 return []
             document = fitz.open(pdf_path)
+            page = document[page_number]
 
             result = context.get("result")[-1]
             meta = self._extract_meta({**task, **result})
@@ -87,13 +88,13 @@ class BBOXOCR(LabelStudioMLBase):
             w = meta["width"] * meta["original_width"] / 100
             h = meta["height"] * meta["original_height"] / 100
 
-            page = document[page_number]
+            page_x = x * page.rect.width / meta["original_width"]
+            page_y = y * page.rect.height / meta["original_height"]
+            page_w = w * page.rect.width / meta["original_width"]
+            page_h = h * page.rect.height / meta["original_height"]
             result_text = fitz.utils.get_text(
-                page, "words", clip=[x / 3, y / 3, (x + w) / 3, (y + h) / 3]
+                page, "text", clip=[page_x, page_y, page_x + page_w, page_y + page_h]
             )  # we use a magnifier of three, that's why we have to divide by three.
-            result_text = " ".join(
-                word[4] for word in result_text
-            )  # get_text returns a list of tuples; the fifth element is the text
 
             # check if the label is Depth Interval; if so, extract the depth interval values
             for result in context["result"]:

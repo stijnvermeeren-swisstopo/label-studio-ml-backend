@@ -25,11 +25,11 @@ The ML Models require the data available in their respective container. Therefor
 
 The `stratigraphy-ml-backend` needs the original pdf files used for the stratigraphy algorithm. Create a directory containing the files and add it in the `docker-compose.yml` for the service `stratigraphy-ml-backend`.
 
-The `tesseract` service requires the png files of the extracted layers from the stratigraphy algorithm. Place the corresponding files in a directory and mount it in the `docker-compose.yml` for the `tesseract` service.
+The `text-extractor` service requires the png files of the extracted layers from the stratigraphy algorithm. Place the corresponding files in a directory and mount it in the `docker-compose.yml` for the `text-extractor` service.
 
 ### 3. Run the services
 Run `docker-compose build` and `docker-compose up` to run both services.
-Two endpoints will be created. The `stratigraphy-ml-backend` will listen on port `9090` and `tesseract` will listen on port `9095`. You can now go to your label-studio front end and add the ML Backends in the UI. Note: You will have to find the IP adress of the docker containers first. You can find them in the logs. If you run them locally, it is your localhost.
+Two endpoints will be created. The `stratigraphy-ml-backend` will listen on port `9090` and `text-extractor` will listen on port `9095`. You can now go to your label-studio front end and add the ML Backends in the UI. Note: You will have to find the IP adress of the docker containers first. You can find them in the logs. If you run them locally, it is your localhost.
 
 
 ## Extend / Adjust the Backend
@@ -192,4 +192,3 @@ docker compose build --no-cache
 # Development Roadmap
 - Move files to S3
 - Make it possible to upload files --> should be placed in a respective folder on S3
-- Use a better OCR service than tesseract. Possibly aws textract.

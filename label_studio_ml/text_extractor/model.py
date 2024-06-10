@@ -1,4 +1,4 @@
-"""Tesseract OCR model for Label Studio."""
+"""Text extraction for Label Studio."""
 
 import io
 import logging

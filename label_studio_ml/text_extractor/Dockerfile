@@ -10,6 +10,16 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=${PORT:-9095} \
     PIP_CACHE_DIR=/.cache
 
+# Update the base OS
+RUN --mount=type=cache,target="/var/cache/apt",sharing=locked \
+    --mount=type=cache,target="/var/lib/apt/lists",sharing=locked \
+    set -eux; \
+    apt-get update; \
+    apt-get upgrade -y; \
+    apt install --no-install-recommends -y  \
+        git; \
+    apt-get autoremove -y
+
 COPY requirements.txt .
 RUN --mount=type=cache,target=${PIP_CACHE_DIR},sharing=locked \
     pip install -r requirements.txt

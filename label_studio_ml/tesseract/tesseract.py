@@ -93,7 +93,7 @@ class BBOXOCR(LabelStudioMLBase):
             page_w = w * page.rect.width / meta["original_width"]
             page_h = h * page.rect.height / meta["original_height"]
             result_text = fitz.utils.get_text(page, "text", clip=[page_x, page_y, page_x + page_w, page_y + page_h])
-            result_text = result.replace("\n", " ")
+            result_text = result_text.replace("\n", " ")
 
             # check if the label is Depth Interval; if so, extract the depth interval values
             for result in context["result"]:

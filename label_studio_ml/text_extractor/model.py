@@ -1,4 +1,4 @@
-"""Tesseract OCR model for Label Studio."""
+"""Text extraction for Label Studio."""
 
 import io
 import logging
@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 import boto3
-import pytesseract as pt
+import fitz
 from PIL import Image
 
 from label_studio_ml.model import LabelStudioMLBase
@@ -36,7 +36,7 @@ S3_TARGET = boto3.resource(
 
 
 class BBOXOCR(LabelStudioMLBase):
-    """Model for OCR using Tesseract."""
+    """Model for OCR from text assigned to pdfs."""
 
     def load_image(self, img_path_url, task_id):
         # load an s3 image, this is very basic demonstration code
@@ -66,14 +66,20 @@ class BBOXOCR(LabelStudioMLBase):
         # extract task metadata: labels, from_name, to_name and other
         from_name, to_name, value = self.label_interface.get_first_tag_occurence("TextArea", "Image")
         task = tasks[0]
-        img_path_url = task["data"][value]
+        print(task["data"][value])
+        pdf_path_url = task["data"][value].split("_")[:-1]
+        page_number = task["data"][value].split("_")[-1]
+        page_number = int(page_number.split(".")[0])
+        pdf_path_url = "".join(pdf_path_url) + ".pdf"
+        pdf_name = pdf_path_url.split("/")[-1]
+        pdf_path = Path("/data/validation/") / pdf_name
+
         context = kwargs.get("context")
-        print(f"{context=}")
         if context:
             if not context["result"]:
                 return []
-
-            image = self.load_image(img_path_url, task.get("id"))
+            document = fitz.open(pdf_path)
+            page = document[page_number]
 
             result = context.get("result")[-1]
             meta = self._extract_meta({**task, **result})
@@ -82,7 +88,12 @@ class BBOXOCR(LabelStudioMLBase):
             w = meta["width"] * meta["original_width"] / 100
             h = meta["height"] * meta["original_height"] / 100
 
-            result_text = pt.image_to_string(image.crop((x, y, x + w, y + h)), config=OCR_config).strip()
+            page_x = x * page.rect.width / meta["original_width"]
+            page_y = y * page.rect.height / meta["original_height"]
+            page_w = w * page.rect.width / meta["original_width"]
+            page_h = h * page.rect.height / meta["original_height"]
+            result_text = fitz.utils.get_text(page, "text", clip=[page_x, page_y, page_x + page_w, page_y + page_h])
+            result_text = result_text.replace("\n", " ")
 
             # check if the label is Depth Interval; if so, extract the depth interval values
             for result in context["result"]:
@@ -90,7 +101,6 @@ class BBOXOCR(LabelStudioMLBase):
                     if result["value"]["labels"] == ["Depth Interval"]:
                         result_text = extract_depth_interval(result_text)
 
-            meta["text"] = result_text
             temp = {
                 "original_width": meta["original_width"],
                 "original_height": meta["original_height"],
@@ -101,7 +111,7 @@ class BBOXOCR(LabelStudioMLBase):
                     "width": w / meta["original_width"] * 100,
                     "height": h / meta["original_height"] * 100,
                     "rotation": 0,
-                    "text": [meta["text"]],
+                    "text": [result_text],
                 },
                 "id": meta["id"],
                 "from_name": from_name,
@@ -139,20 +149,17 @@ def extract_depth_interval(result_text: str) -> str:
     Returns:
         str: The extracted depth interval.
     """
-    numbers = result_text.split("\n")
+    numbers = get_numbers_from_string(result_text)
+    if len(numbers) == 1:
+        return f"start: 0 end: {numbers[0]}"
     if len(numbers) >= 2:
-        try:
-            start = get_number_from_string(numbers[0])
-            end = get_number_from_string(numbers[-1])
-            return f"start: {start} end: {end}"
-        except AttributeError:  # If no there is no number in the string
-            return "start: end: "
+        return f"start: {numbers[0]} end: {numbers[-1]}"
     else:
-        print(result_text)
+        print(f"No number was detected in the bounding box: {result_text}. The recognized numbers are {numbers}.")
         return "start: end: "
 
 
-def get_number_from_string(string: str) -> float:
+def get_numbers_from_string(string: str) -> float:
     """Extract the first number from a string.
 
     Supports various notation of numbers including scientific notation.
@@ -163,7 +170,7 @@ def get_number_from_string(string: str) -> float:
     Returns:
         float: The extracted number.
     """
-    number = re.search("[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", string).group()
-    number = number.replace(",", ".")
-    return abs(float(number))  # Regex should not recognize the minus sign as part of the number.
-    # TODO: Adjust regex such that no negative numbers are detected.
+    numbers = re.findall("-?([0-9]+([\.,][0-9]+)?)", string)
+    numbers = [number[0].replace(",", ".") for number in numbers]
+    numbers = [abs(float(number)) for number in numbers]
+    return numbers

@@ -10,14 +10,14 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=${PORT:-9095} \
     PIP_CACHE_DIR=/.cache
 
-# Update the base OS and install Tesseract
+# Update the base OS
 RUN --mount=type=cache,target="/var/cache/apt",sharing=locked \
     --mount=type=cache,target="/var/lib/apt/lists",sharing=locked \
     set -eux; \
     apt-get update; \
     apt-get upgrade -y; \
     apt install --no-install-recommends -y  \
-        tesseract-ocr tesseract-ocr-chi-sim tesseract-ocr-chi-tra tesseract-ocr-deu git; \
+        git; \
     apt-get autoremove -y
 
 COPY requirements.txt .

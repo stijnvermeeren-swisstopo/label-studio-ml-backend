@@ -22,7 +22,7 @@ logging.config.dictConfig(
     }
 )
 
-from tesseract import BBOXOCR
+from model import BBOXOCR
 
 from label_studio_ml.api import init_app
 

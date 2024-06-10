@@ -1,7 +1,8 @@
 import json
 
 import pytest
-from tesseract import BBOXOCR
+
+from label_studio_ml.text_extractor.model import BBOXOCR
 
 
 @pytest.fixture

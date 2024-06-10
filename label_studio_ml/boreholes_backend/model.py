@@ -50,9 +50,7 @@ class LayerExtractionModel(LabelStudioMLBase):
         try:
             pdf_file_name = list(prediction.keys())[0]
             prediction = prediction[pdf_file_name]
-            page_prediction = prediction.pages[page_number]
-
-            model_predictions = build_model_predictions(page_prediction)
+            model_predictions = build_model_predictions(prediction, page_number)
         except IndexError:
             print("No prediction found.")
             model_predictions = []

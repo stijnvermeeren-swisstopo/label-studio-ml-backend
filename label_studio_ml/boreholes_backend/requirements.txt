@@ -1,3 +1,3 @@
 # Note: without -e the package does not work. There are issues with the path assignment in the package.
--e git+https://github.com/swisstopo/swissgeol-boreholes-dataextraction.git#egg=swissgeol-boreholes-dataextraction  # remove -e for future production server
+-e git+https://github.com/swisstopo/swissgeol-boreholes-dataextraction.git@coordinates-with-position-2#egg=swisstopo-boreholes  # remove -e for future production server
 regex

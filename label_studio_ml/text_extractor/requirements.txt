@@ -10,5 +10,4 @@ pytest
 pytest-cov
 PyMuPDF>=1.23.26
 
-# label_studio_sdk @ git+https://github.com/heartexlabs/label-studio-sdk.git@be15a785d152cf5d49b9f27be225d7c4f6b4e001
-label-studio-ml @ git+https://github.com/redur/label-studio-ml-backend.git@feat/get_text_from_pdf
+label-studio-ml @ git+https://github.com/redur/label-studio-ml-backend.git

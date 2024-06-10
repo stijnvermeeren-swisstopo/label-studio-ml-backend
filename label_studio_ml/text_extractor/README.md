@@ -1,0 +1,1 @@
+This model contains minimal adjustments to the published one in the [label-studio-ml-backend repository](https://github.com/HumanSignal/label-studio-ml-backend/tree/master/label_studio_ml/examples/tesseract) such that it runs using the text assigned to the pdf files.

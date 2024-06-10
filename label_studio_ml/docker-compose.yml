@@ -35,9 +35,9 @@ services:
       - "./data/server:/data"
       - "/Users/renato.durrer/repos/swisstopo/swissgeol-boreholes-dataextraction/data/data_v2/validation/:/data/validation"
 
-  tesseract:
-    container_name: tesseract
-    build: tesseract/
+  text_extractor:
+    container_name: text_extractor
+    build: text_extractor/
     ports:
       - 9095:9095
     volumes:

@@ -36,7 +36,7 @@ S3_TARGET = boto3.resource(
 
 
 class BBOXOCR(LabelStudioMLBase):
-    """Model for OCR using Tesseract."""
+    """Model for OCR from text assigned to pdfs."""
 
     def load_image(self, img_path_url, task_id):
         # load an s3 image, this is very basic demonstration code

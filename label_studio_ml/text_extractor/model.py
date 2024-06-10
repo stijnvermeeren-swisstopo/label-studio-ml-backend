@@ -9,6 +9,12 @@ from pathlib import Path
 import boto3
 import fitz
 from PIL import Image
+from stratigraphy.util.coordinate_extraction import (
+    COORDINATE_ENTRY_REGEX,
+    CoordinateEntry,
+    LV03Coordinate,
+    LV95Coordinate,
+)
 
 from label_studio_ml.model import LabelStudioMLBase
 
@@ -100,6 +106,8 @@ class BBOXOCR(LabelStudioMLBase):
                 if result["from_name"] == "label":  # noqa: SIM102
                     if result["value"]["labels"] == ["Depth Interval"]:
                         result_text = extract_depth_interval(result_text)
+                    elif result["value"]["labels"] == ["Coordinates"]:
+                        result_text = str(extract_coordinates(result_text))
 
             temp = {
                 "original_width": meta["original_width"],
@@ -174,3 +182,59 @@ def get_numbers_from_string(string: str) -> float:
     numbers = [number[0].replace(",", ".") for number in numbers]
     numbers = [abs(float(number)) for number in numbers]
     return numbers
+
+
+def get_coordinate_numbers_from_string(string: str) -> tuple[float]:
+    """Extract the first two numbers from a string.
+
+    Supports various notation of coordinates.
+
+    Supported coordinate formats are:
+        - "2'456'435"
+        - "2456435"
+        - "2.456.435"
+        - "2456435"
+        - "2,456,435"
+        - "456'435"
+        - etc.
+
+    Args:
+        string (str): The string to extract the number from.
+
+    Returns:
+        tuple[float]: The extracted numbers.
+    """
+    numbers = re.findall(COORDINATE_ENTRY_REGEX, string)
+    if len(numbers) == 2:
+        print(numbers[0])
+        print(numbers[1])
+        return int("".join(numbers[0])), int("".join(numbers[1]))
+    else:
+        return tuple()
+
+
+def extract_coordinates(result_text: str) -> tuple[int]:
+    """Extract coordinates from OCR result.
+
+    Args:
+        result_text (str): The recognized text.
+
+    Returns:
+        tuple[int]: Coordinates (N, E) as integers.
+    """
+    east, north = get_coordinate_numbers_from_string(result_text)
+    # Note, the coordinate class deals with confusion of east and north automatically.
+    # This is true for Switzerland. For other countries, this might not be the case.
+
+    if east > 1e6 and north > 1e6:
+        coordinate = LV95Coordinate(
+            CoordinateEntry(east),
+            CoordinateEntry(north),
+        )
+    else:
+        coordinate = LV03Coordinate(
+            CoordinateEntry(east),
+            CoordinateEntry(north),
+        )
+    if coordinate.is_valid():
+        return coordinate

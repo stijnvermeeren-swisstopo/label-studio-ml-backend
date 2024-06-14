@@ -29,29 +29,28 @@ def build_model_predictions(prediction: FilePredictions, page_number: int) -> li
     layers_with_depth_intervals = []
     page_prediction = prediction.pages[page_number]
 
-    # extract metadata for the first page
-    if page_number == 0:
-        metadata_prediction = prediction.metadata
-        coordinates = metadata_prediction.coordinates
-        if coordinates is not None:
-            label = "Coordinates"
-            value = {
-                "x": convert_to_ls(coordinates.rect.x0, page_prediction.page_width),
-                "y": convert_to_ls(coordinates.rect.y0, page_prediction.page_height),
-                "width": convert_to_ls(
-                    coordinates.rect.width,
-                    page_prediction.page_width,
-                ),
-                "height": convert_to_ls(
-                    coordinates.rect.height,
-                    page_prediction.page_height,
-                ),
-                "rotation": 0,
-            }
-            metadata_id = uuid.uuid4().hex
-            pre_annotation_result.extend(
-                create_metadata_ls_result(metadata_prediction, page_prediction, value, label, metadata_id=metadata_id)
-            )
+    # extract metadata. For now coordinates only
+    metadata_prediction = prediction.metadata
+    coordinates = metadata_prediction.coordinates
+    if coordinates is not None and page_number == coordinates.page:
+        label = "Coordinates"
+        value = {
+            "x": convert_to_ls(coordinates.rect.x0, page_prediction.page_width),
+            "y": convert_to_ls(coordinates.rect.y0, page_prediction.page_height),
+            "width": convert_to_ls(
+                coordinates.rect.width,
+                page_prediction.page_width,
+            ),
+            "height": convert_to_ls(
+                coordinates.rect.height,
+                page_prediction.page_height,
+            ),
+            "rotation": 0,
+        }
+        metadata_id = uuid.uuid4().hex
+        pre_annotation_result.extend(
+            create_metadata_ls_result(metadata_prediction, page_prediction, value, label, metadata_id=metadata_id)
+        )
 
     # extract layers
     for layer in page_prediction.layers:

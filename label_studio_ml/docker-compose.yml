@@ -33,7 +33,7 @@ services:
       - "9090:9090"
     volumes:
       - "./data/server:/data"
-      - "/Users/renato.durrer/repos/swisstopo/swissgeol-boreholes-dataextraction/data/data_v2/validation/:/data/validation"
+      - "/home/ubuntu/data:/data/"
 
   text_extractor:
     container_name: text_extractor
@@ -42,8 +42,7 @@ services:
       - 9095:9095
     volumes:
       - "./data/server:/data"
-      - "/Users/renato.durrer/repos/swisstopo/label_studio_data/test_png:/data/test_png"
-      - "/Users/renato.durrer/repos/swisstopo/swissgeol-boreholes-dataextraction/data/data_v2/validation/:/data/validation"
+      - "/home/ubuntu/data:/data/"
     environment:
       - LOG_LEVEL=DEBUG
 

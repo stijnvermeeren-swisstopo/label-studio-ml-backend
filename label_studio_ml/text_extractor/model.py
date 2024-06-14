@@ -98,7 +98,9 @@ class BBOXOCR(LabelStudioMLBase):
             page_y = y * page.rect.height / meta["original_height"]
             page_w = w * page.rect.width / meta["original_width"]
             page_h = h * page.rect.height / meta["original_height"]
-            result_text = fitz.utils.get_text(page, "text", clip=[page_x, page_y, page_x + page_w, page_y + page_h])
+            
+            page_rect = fitz.Rect([page_x, page_y, page_x + page_w, page_y + page_h])
+            result_text = fitz.utils.get_text(page, "text", clip=page_rect)
             result_text = result_text.replace("\n", " ")
 
             # check if the label is Depth Interval; if so, extract the depth interval values
@@ -107,7 +109,7 @@ class BBOXOCR(LabelStudioMLBase):
                     if result["value"]["labels"] == ["Depth Interval"]:
                         result_text = extract_depth_interval(result_text)
                     elif result["value"]["labels"] == ["Coordinates"]:
-                        result_text = str(extract_coordinates(result_text))
+                        result_text = str(extract_coordinates(result_text=result_text, rect=page_rect, page_number=page_number))
 
             temp = {
                 "original_width": meta["original_width"],
@@ -213,11 +215,13 @@ def get_coordinate_numbers_from_string(string: str) -> tuple[float]:
         return tuple()
 
 
-def extract_coordinates(result_text: str) -> tuple[int]:
+def extract_coordinates(result_text: str, rect: fitz.Rect, page_number: int) -> tuple[int]:
     """Extract coordinates from OCR result.
 
     Args:
         result_text (str): The recognized text.
+        rect (fitz.Rect): The bounding box rectangle forthe coordinates.
+        page_number (int): The page number on which the coordinates are to be found.
 
     Returns:
         tuple[int]: Coordinates (N, E) as integers.
@@ -230,11 +234,15 @@ def extract_coordinates(result_text: str) -> tuple[int]:
         coordinate = LV95Coordinate(
             CoordinateEntry(east),
             CoordinateEntry(north),
+            rect=rect,
+            page=page_number
         )
     else:
         coordinate = LV03Coordinate(
             CoordinateEntry(east),
             CoordinateEntry(north),
+            rect=rect,
+            page=page_number
         )
     if coordinate.is_valid():
         return coordinate

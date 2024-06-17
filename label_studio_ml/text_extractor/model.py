@@ -12,9 +12,6 @@ from PIL import Image
 from stratigraphy.util.coordinate_extraction import (
     COORDINATE_ENTRY_REGEX,
     Coordinate,
-    CoordinateEntry,
-    LV03Coordinate,
-    LV95Coordinate,
 )
 
 from label_studio_ml.model import LabelStudioMLBase

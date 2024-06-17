@@ -13,7 +13,7 @@ def convert_to_ls(pixel_position: int, original_length: int):
     return 100 * pixel_position / original_length
 
 
-def build_model_predictions(prediction: FilePredictions, page_number: int) -> list[dict]:
+def build_model_predictions(prediction: FilePredictions, page_number: int, ls_page_width: int) -> list[dict]:
     """Build the label-studio predictions object from the stratygraphy.prediction.PagePrediction object.
 
     Note: Could become a method of the PagePrediction class.
@@ -21,6 +21,8 @@ def build_model_predictions(prediction: FilePredictions, page_number: int) -> li
     Args:
         prediction (FilePredictions): The prediction object from the stratigraphy pipeline.
         page_number (int): The page number to extract the predictions from.
+        ls_page_width (int): The page width as obtained by label_studio. Differes by a scaling factor from the page
+                             width in the predictions object.
 
     Returns:
         list[dict]: The label-studio predictions object.
@@ -28,6 +30,7 @@ def build_model_predictions(prediction: FilePredictions, page_number: int) -> li
     pre_annotation_result = []
     layers_with_depth_intervals = []
     page_prediction = prediction.pages[page_number]
+    scale_factor = ls_page_width / page_prediction.page_width
 
     # extract metadata. For now coordinates only
     metadata_prediction = prediction.metadata
@@ -49,7 +52,7 @@ def build_model_predictions(prediction: FilePredictions, page_number: int) -> li
         }
         metadata_id = uuid.uuid4().hex
         pre_annotation_result.extend(
-            create_metadata_ls_result(metadata_prediction, page_prediction, value, label, metadata_id=metadata_id)
+            create_metadata_ls_result(metadata_prediction, page_prediction, value, label, metadata_id=metadata_id, scale_factor=scale_factor)
         )
 
     # extract layers
@@ -118,7 +121,7 @@ def build_model_predictions(prediction: FilePredictions, page_number: int) -> li
                     logger.warning(f"Depth interval for layer {layer.id.hex} is not complete.")
                     continue
 
-            pre_annotation_result.extend(create_ls_result(layer, page_prediction, value, label))
+            pre_annotation_result.extend(create_ls_result(layer, page_prediction, value, label, scale_factor))
 
     for layer_id in layers_with_depth_intervals:
         relation = {
@@ -135,7 +138,7 @@ def build_model_predictions(prediction: FilePredictions, page_number: int) -> li
     return [model_predictions]
 
 
-def create_ls_result(layer: LayerPrediction, page_prediction: PagePredictions, value: dict, label: str) -> list[dict]:
+def create_ls_result(layer: LayerPrediction, page_prediction: PagePredictions, value: dict, label: str, scale_factor: float) -> list[dict]:
     """Generate the label-studio predictions object for a single layer and label.
 
     Args:
@@ -143,6 +146,7 @@ def create_ls_result(layer: LayerPrediction, page_prediction: PagePredictions, v
         page_prediction (PagePredictions): The page prediction object.
         value (dict): The value object for the label.
         label (str): The label name.
+        scale_factor (float): Scaling factor applied on the png images shown in label-studio.
 
     Returns:
         list[dict]: The label-studio predictions object.
@@ -154,8 +158,8 @@ def create_ls_result(layer: LayerPrediction, page_prediction: PagePredictions, v
         pre_annotation["id"] = layer.id.hex + f"_{label}"
         pre_annotation["type"] = _type
         pre_annotation["value"] = value.copy()
-        pre_annotation["original_widht"] = int(page_prediction.page_width * 3)  # we used a scale factor of three
-        pre_annotation["original_height"] = int(page_prediction.page_height * 3)  # we used a scale factor of three
+        pre_annotation["original_widht"] = int(page_prediction.page_width * scale_factor)
+        pre_annotation["original_height"] = int(page_prediction.page_height * scale_factor)
         pre_annotation["image_rotation"] = 0
         pre_annotation["origin"] = "manual"
         if _type == "rectangle":
@@ -182,7 +186,7 @@ def create_ls_result(layer: LayerPrediction, page_prediction: PagePredictions, v
 
 
 def create_metadata_ls_result(
-    metadata_prediction: BoreholeMetaData, page_prediction: PagePredictions, value: dict, label: str, metadata_id: str
+    metadata_prediction: BoreholeMetaData, page_prediction: PagePredictions, value: dict, label: str, metadata_id: str, scale_factor: float
 ) -> list[dict]:
     """Generate the label-studio predictions object for a single metadata object and label.
 
@@ -192,6 +196,7 @@ def create_metadata_ls_result(
         value (dict): The value object for the label.
         label (str): The label name.
         metadata_id (str): The id of the metadata object.
+        scale_factor (float): Scaling factor applied on the png images shown in label-studio.
 
     Returns:
         list[dict]: The label-studio predictions object.
@@ -203,8 +208,8 @@ def create_metadata_ls_result(
         pre_annotation["id"] = metadata_id
         pre_annotation["type"] = _type
         pre_annotation["value"] = value.copy()
-        pre_annotation["original_widht"] = int(page_prediction.page_width * 3)  # we used a scale factor of three
-        pre_annotation["original_height"] = int(page_prediction.page_height * 3)  # we used a scale factor of three
+        pre_annotation["original_widht"] = int(page_prediction.page_width * scale_factor)
+        pre_annotation["original_height"] = int(page_prediction.page_height * scale_factor)
         pre_annotation["image_rotation"] = 0
         pre_annotation["origin"] = "manual"
         if _type == "rectangle":

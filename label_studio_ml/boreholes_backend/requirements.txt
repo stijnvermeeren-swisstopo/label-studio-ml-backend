@@ -1,3 +1,4 @@
 # Note: without -e the package does not work. There are issues with the path assignment in the package.
+numpy==1.26.4
 -e git+https://github.com/swisstopo/swissgeol-boreholes-dataextraction.git#egg=swissgeol-boreholes-dataextraction  # remove -e for future production server
 regex

@@ -11,6 +11,7 @@ import fitz
 from PIL import Image
 from stratigraphy.util.coordinate_extraction import (
     COORDINATE_ENTRY_REGEX,
+    Coordinate,
     CoordinateEntry,
     LV03Coordinate,
     LV95Coordinate,
@@ -209,8 +210,6 @@ def get_coordinate_numbers_from_string(string: str) -> tuple[float]:
     """
     numbers = re.findall(COORDINATE_ENTRY_REGEX, string)
     if len(numbers) == 2:
-        print(numbers[0])
-        print(numbers[1])
         return int("".join(numbers[0])), int("".join(numbers[1]))
     else:
         return tuple()
@@ -234,20 +233,6 @@ def extract_coordinates(result_text: str, rect: fitz.Rect, page_number: int) -> 
         return None
     # Note, the coordinate class deals with confusion of east and north automatically.
     # This is true for Switzerland. For other countries, this might not be the case.
-
-    if east > 1e6 and north > 1e6:
-        coordinate = LV95Coordinate(
-            CoordinateEntry(east),
-            CoordinateEntry(north),
-            rect=rect,
-            page=page_number
-        )
-    else:
-        coordinate = LV03Coordinate(
-            CoordinateEntry(east),
-            CoordinateEntry(north),
-            rect=rect,
-            page=page_number
-        )
+    coordinate = Coordinate.from_values(east, north, rect, page_number)
     if coordinate.is_valid():
         return coordinate

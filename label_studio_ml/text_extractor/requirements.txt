@@ -10,5 +10,5 @@ pytest
 pytest-cov
 PyMuPDF>=1.23.26
 
-label-studio-ml @ git+https://github.com/redur/label-studio-ml-backend.git@feat/coordinate_annotation
+label-studio-ml @ git+https://github.com/redur/label-studio-ml-backend.git
 -e git+https://github.com/swisstopo/swissgeol-boreholes-dataextraction.git#egg=swissgeol-boreholes-dataextraction  # remove -e for future production server

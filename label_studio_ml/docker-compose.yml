@@ -31,6 +31,8 @@ services:
       - LABEL_STUDIO_API_KEY=
     ports:
       - "9090:9090"
+    networks:
+      - label-studio-network
     volumes:
       - "./data/server:/data"
       - "/home/ubuntu/data:/data/"
@@ -40,6 +42,8 @@ services:
     build: text_extractor/
     ports:
       - 9095:9095
+    networks:
+      - label-studio-network
     volumes:
       - "./data/server:/data"
       - "/home/ubuntu/data:/data/"
@@ -53,3 +57,6 @@ services:
       # Determine the actual IP using 'ifconfig' (Linux/Mac) or 'ipconfig' (Windows).
       - LABEL_STUDIO_URL=
       - LABEL_STUDIO_API_KEY=
+networks:
+  label-studio-network:
+    external: true

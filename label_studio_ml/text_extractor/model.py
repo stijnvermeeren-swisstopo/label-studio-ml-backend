@@ -109,7 +109,8 @@ class BBOXOCR(LabelStudioMLBase):
                     if result["value"]["labels"] == ["Depth Interval"]:
                         result_text = extract_depth_interval(result_text)
                     elif result["value"]["labels"] == ["Coordinates"]:
-                        result_text = str(extract_coordinates(result_text=result_text, rect=page_rect, page_number=page_number))
+                        coordinates = extract_coordinates(result_text=result_text, rect=page_rect, page_number=page_number)
+                        result_text = str(coordinates) if coordinates is not None else ''
 
             temp = {
                 "original_width": meta["original_width"],
@@ -226,7 +227,11 @@ def extract_coordinates(result_text: str, rect: fitz.Rect, page_number: int) -> 
     Returns:
         tuple[int]: Coordinates (N, E) as integers.
     """
-    east, north = get_coordinate_numbers_from_string(result_text)
+    try:
+        east, north = get_coordinate_numbers_from_string(result_text)
+    except ValueError:
+        print("Could not recognize any coordinates.")
+        return None
     # Note, the coordinate class deals with confusion of east and north automatically.
     # This is true for Switzerland. For other countries, this might not be the case.
 

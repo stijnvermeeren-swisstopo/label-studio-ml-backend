@@ -32,7 +32,7 @@ def build_model_predictions(prediction: FilePredictions, page_number: int) -> li
     # extract metadata. For now coordinates only
     metadata_prediction = prediction.metadata
     coordinates = metadata_prediction.coordinates
-    if coordinates is not None and page_number == coordinates.page:
+    if coordinates is not None and page_number+1 == coordinates.page:
         label = "Coordinates"
         value = {
             "x": convert_to_ls(coordinates.rect.x0, page_prediction.page_width),

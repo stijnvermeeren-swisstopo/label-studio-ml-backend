@@ -35,7 +35,7 @@ services:
       - label-studio-network
     volumes:
       - "./data/server:/data"
-      - "/home/ubuntu/data:/data/"
+      - "${DATA_DIRECTORY_PATH}:/data/"
 
   text_extractor:
     container_name: text_extractor
@@ -46,7 +46,7 @@ services:
       - label-studio-network
     volumes:
       - "./data/server:/data"
-      - "/home/ubuntu/data:/data/"
+      - "${DATA_DIRECTORY_PATH}:/data/"
     environment:
       - LOG_LEVEL=DEBUG
 

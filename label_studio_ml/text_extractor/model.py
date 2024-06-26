@@ -56,7 +56,8 @@ class BBOXOCR(LabelStudioMLBase):
         else:
             # some hack to make image loading work:
             file_name = img_path_url.split("/")[-1]
-            filepath = Path("/data/png/") / file_name
+            project_name = img_path_url.split("/")[-2]
+            filepath = Path("/data/png/") project_name / file_name
 
             # filepath = self.get_local_path(
             #     img_path_url,

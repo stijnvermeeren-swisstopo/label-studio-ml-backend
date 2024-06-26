@@ -56,7 +56,7 @@ class BBOXOCR(LabelStudioMLBase):
         else:
             # some hack to make image loading work:
             file_name = img_path_url.split("/")[-1]
-            filepath = Path("/data/test_png/") / file_name
+            filepath = Path("/data/png/") / file_name
 
             # filepath = self.get_local_path(
             #     img_path_url,
@@ -76,7 +76,8 @@ class BBOXOCR(LabelStudioMLBase):
         page_number = int(page_number.split(".")[0])
         pdf_path_url = "".join(pdf_path_url) + ".pdf"
         pdf_name = pdf_path_url.split("/")[-1]
-        pdf_path = Path("/data/validation/") / pdf_name
+        project_name = pdf_path_url.split("/")[-2]
+        pdf_path = Path("/data/pdf/") / project_name / pdf_name
 
         context = kwargs.get("context")
         if context:
@@ -96,7 +97,7 @@ class BBOXOCR(LabelStudioMLBase):
             page_y = y * page.rect.height / meta["original_height"]
             page_w = w * page.rect.width / meta["original_width"]
             page_h = h * page.rect.height / meta["original_height"]
-            
+
             page_rect = fitz.Rect([page_x, page_y, page_x + page_w, page_y + page_h])
             result_text = fitz.utils.get_text(page, "text", clip=page_rect)
             result_text = result_text.replace("\n", " ")
@@ -107,8 +108,10 @@ class BBOXOCR(LabelStudioMLBase):
                     if result["value"]["labels"] == ["Depth Interval"]:
                         result_text = extract_depth_interval(result_text)
                     elif result["value"]["labels"] == ["Coordinates"]:
-                        coordinates = extract_coordinates(result_text=result_text, rect=page_rect, page_number=page_number)
-                        result_text = str(coordinates) if coordinates is not None else ''
+                        coordinates = extract_coordinates(
+                            result_text=result_text, rect=page_rect, page_number=page_number
+                        )
+                        result_text = str(coordinates) if coordinates is not None else ""
 
             temp = {
                 "original_width": meta["original_width"],

@@ -32,11 +32,12 @@ class LayerExtractionModel(LabelStudioMLBase):
 
         png_path = tasks[0]["data"]["ocr"].split("=")[-1]
         file_name = png_path.split("/")[-1]
+        project_name = tasks[0]["data"]["ocr"].split("/")[-2]
         file_name, page_number = file_name.split("_")
         page_number = int(page_number.split(".")[0])
         file_name = file_name + ".pdf"
         # Adjust the path below for now. Make sure volume is mounted in docker container.
-        input_directory = Path("/data/validation/") / file_name
+        input_directory = Path("/data/pdf/") / project_name / file_name
         ground_truth_path = Path("/data/validation/ground_truth.json")
         out_directory = Path("/data/_temp/")
         predictions_path = Path("/data/_temp/predictions.json")

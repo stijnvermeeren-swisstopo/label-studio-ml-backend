@@ -9,6 +9,10 @@ from pathlib import Path
 import boto3
 import fitz
 from PIL import Image
+from stratigraphy.util.coordinate_extraction import (
+    COORDINATE_ENTRY_REGEX,
+    Coordinate,
+)
 
 from label_studio_ml.model import LabelStudioMLBase
 
@@ -52,7 +56,8 @@ class BBOXOCR(LabelStudioMLBase):
         else:
             # some hack to make image loading work:
             file_name = img_path_url.split("/")[-1]
-            filepath = Path("/data/test_png/") / file_name
+            project_name = img_path_url.split("/")[-2]
+            filepath = Path("/data/png/") / project_name / file_name
 
             # filepath = self.get_local_path(
             #     img_path_url,
@@ -72,7 +77,8 @@ class BBOXOCR(LabelStudioMLBase):
         page_number = int(page_number.split(".")[0])
         pdf_path_url = "".join(pdf_path_url) + ".pdf"
         pdf_name = pdf_path_url.split("/")[-1]
-        pdf_path = Path("/data/validation/") / pdf_name
+        project_name = pdf_path_url.split("/")[-2]
+        pdf_path = Path("/data/pdf/") / project_name / pdf_name
 
         context = kwargs.get("context")
         if context:
@@ -92,7 +98,9 @@ class BBOXOCR(LabelStudioMLBase):
             page_y = y * page.rect.height / meta["original_height"]
             page_w = w * page.rect.width / meta["original_width"]
             page_h = h * page.rect.height / meta["original_height"]
-            result_text = fitz.utils.get_text(page, "text", clip=[page_x, page_y, page_x + page_w, page_y + page_h])
+
+            page_rect = fitz.Rect([page_x, page_y, page_x + page_w, page_y + page_h])
+            result_text = fitz.utils.get_text(page, "text", clip=page_rect)
             result_text = result_text.replace("\n", " ")
 
             # check if the label is Depth Interval; if so, extract the depth interval values
@@ -100,6 +108,11 @@ class BBOXOCR(LabelStudioMLBase):
                 if result["from_name"] == "label":  # noqa: SIM102
                     if result["value"]["labels"] == ["Depth Interval"]:
                         result_text = extract_depth_interval(result_text)
+                    elif result["value"]["labels"] == ["Coordinates"]:
+                        coordinates = extract_coordinates(
+                            result_text=result_text, rect=page_rect, page_number=page_number
+                        )
+                        result_text = str(coordinates) if coordinates is not None else ""
 
             temp = {
                 "original_width": meta["original_width"],
@@ -174,3 +187,53 @@ def get_numbers_from_string(string: str) -> float:
     numbers = [number[0].replace(",", ".") for number in numbers]
     numbers = [abs(float(number)) for number in numbers]
     return numbers
+
+
+def get_coordinate_numbers_from_string(string: str) -> tuple[float]:
+    """Extract the first two numbers from a string.
+
+    Supports various notation of coordinates.
+
+    Supported coordinate formats are:
+        - "2'456'435"
+        - "2456435"
+        - "2.456.435"
+        - "2456435"
+        - "2,456,435"
+        - "456'435"
+        - etc.
+
+    Args:
+        string (str): The string to extract the number from.
+
+    Returns:
+        tuple[float]: The extracted numbers.
+    """
+    numbers = re.findall(COORDINATE_ENTRY_REGEX, string)
+    if len(numbers) == 2:
+        return int("".join(numbers[0])), int("".join(numbers[1]))
+    else:
+        return tuple()
+
+
+def extract_coordinates(result_text: str, rect: fitz.Rect, page_number: int) -> tuple[int]:
+    """Extract coordinates from OCR result.
+
+    Args:
+        result_text (str): The recognized text.
+        rect (fitz.Rect): The bounding box rectangle forthe coordinates.
+        page_number (int): The page number on which the coordinates are to be found.
+
+    Returns:
+        tuple[int]: Coordinates (N, E) as integers.
+    """
+    try:
+        east, north = get_coordinate_numbers_from_string(result_text)
+    except ValueError:
+        print("Could not recognize any coordinates.")
+        return None
+    # Note, the coordinate class deals with confusion of east and north automatically.
+    # This is true for Switzerland. For other countries, this might not be the case.
+    coordinate = Coordinate.from_values(east, north, rect, page_number)
+    if coordinate.is_valid():
+        return coordinate

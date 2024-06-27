@@ -179,7 +179,7 @@ Make sure the right directories are mounted to your docker containers.
 ## Troubleshooting Pip Cache Reset in Docker Images
 
 Sometimes, you want to reset the pip cache to ensure that the latest versions of the dependencies are installed. 
-For example, Label Studio ML Backend library is used as 
+For example, Label Studio ML Backend library is used as
 `label-studio-ml @ git+https://github.com/HumanSignal/label-studio-ml-backend.git` in requirements.txt. Let's assume that it
 is updated, and you want to jump on the latest version in your docker image with the ML model. 
 

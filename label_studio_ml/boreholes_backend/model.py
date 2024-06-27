@@ -8,6 +8,7 @@ from utils import build_model_predictions
 
 from label_studio_ml.model import LabelStudioMLBase
 from label_studio_ml.response import ModelResponse
+from PIL import Image
 
 
 class LayerExtractionModel(LabelStudioMLBase):
@@ -29,12 +30,14 @@ class LayerExtractionModel(LabelStudioMLBase):
         print(f"""\
         Run prediction on {tasks}""")
 
-        file_name = tasks[0]["data"]["ocr"].split("/")[-1]
+        png_path = tasks[0]["data"]["ocr"].split("=")[-1]
+        file_name = png_path.split("/")[-1]
+        project_name = tasks[0]["data"]["ocr"].split("/")[-2]
         file_name, page_number = file_name.split("_")
         page_number = int(page_number.split(".")[0])
         file_name = file_name + ".pdf"
         # Adjust the path below for now. Make sure volume is mounted in docker container.
-        input_directory = Path("/data/validation/") / file_name
+        input_directory = Path("/data/pdf/") / project_name / file_name
         ground_truth_path = Path("/data/validation/ground_truth.json")
         out_directory = Path("/data/_temp/")
         predictions_path = Path("/data/_temp/predictions.json")
@@ -50,9 +53,10 @@ class LayerExtractionModel(LabelStudioMLBase):
         try:
             pdf_file_name = list(prediction.keys())[0]
             prediction = prediction[pdf_file_name]
-            page_prediction = prediction.pages[page_number]
-
-            model_predictions = build_model_predictions(page_prediction)
+            # get image width from png file to retrieve information about image scaling from the pdf
+            image = Image.open(Path('/data') / png_path) 
+            ls_page_width = image.size[0]
+            model_predictions = build_model_predictions(prediction, page_number, ls_page_width=ls_page_width)
         except IndexError:
             print("No prediction found.")
             model_predictions = []

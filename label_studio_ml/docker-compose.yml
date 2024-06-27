@@ -31,19 +31,22 @@ services:
       - LABEL_STUDIO_API_KEY=
     ports:
       - "9090:9090"
+    networks:
+      - label-studio-network
     volumes:
       - "./data/server:/data"
-      - "/Users/renato.durrer/repos/swisstopo/swissgeol-boreholes-dataextraction/data/data_v2/validation/:/data/validation"
+      - "${DATA_DIRECTORY_PATH}:/data/"
 
   text_extractor:
     container_name: text_extractor
     build: text_extractor/
     ports:
       - 9095:9095
+    networks:
+      - label-studio-network
     volumes:
       - "./data/server:/data"
-      - "/Users/renato.durrer/repos/swisstopo/label_studio_data/test_png:/data/test_png"
-      - "/Users/renato.durrer/repos/swisstopo/swissgeol-boreholes-dataextraction/data/data_v2/validation/:/data/validation"
+      - "${DATA_DIRECTORY_PATH}:/data/"
     environment:
       - LOG_LEVEL=DEBUG
 
@@ -54,3 +57,6 @@ services:
       # Determine the actual IP using 'ifconfig' (Linux/Mac) or 'ipconfig' (Windows).
       - LABEL_STUDIO_URL=
       - LABEL_STUDIO_API_KEY=
+networks:
+  label-studio-network:
+    external: true

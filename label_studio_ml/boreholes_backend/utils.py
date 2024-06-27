@@ -35,7 +35,7 @@ def build_model_predictions(prediction: FilePredictions, page_number: int, ls_pa
     # extract metadata. For now coordinates only
     metadata_prediction = prediction.metadata
     coordinates = metadata_prediction.coordinates
-    if coordinates is not None and page_number+1 == coordinates.page:
+    if coordinates is not None and page_number + 1 == coordinates.page:
         label = "Coordinates"
         value = {
             "x": convert_to_ls(coordinates.rect.x0, page_prediction.page_width),
@@ -52,7 +52,9 @@ def build_model_predictions(prediction: FilePredictions, page_number: int, ls_pa
         }
         metadata_id = uuid.uuid4().hex
         pre_annotation_result.extend(
-            create_metadata_ls_result(metadata_prediction, page_prediction, value, label, metadata_id=metadata_id, scale_factor=scale_factor)
+            create_metadata_ls_result(
+                metadata_prediction, page_prediction, value, label, metadata_id=metadata_id, scale_factor=scale_factor
+            )
         )
 
     # extract layers
@@ -138,7 +140,9 @@ def build_model_predictions(prediction: FilePredictions, page_number: int, ls_pa
     return [model_predictions]
 
 
-def create_ls_result(layer: LayerPrediction, page_prediction: PagePredictions, value: dict, label: str, scale_factor: float) -> list[dict]:
+def create_ls_result(
+    layer: LayerPrediction, page_prediction: PagePredictions, value: dict, label: str, scale_factor: float
+) -> list[dict]:
     """Generate the label-studio predictions object for a single layer and label.
 
     Args:
@@ -158,7 +162,9 @@ def create_ls_result(layer: LayerPrediction, page_prediction: PagePredictions, v
         pre_annotation["id"] = layer.id.hex + f"_{label}"
         pre_annotation["type"] = _type
         pre_annotation["value"] = value.copy()
-        pre_annotation["original_widht"] = int(page_prediction.page_width * scale_factor)
+        pre_annotation["original_width"] = int(
+            page_prediction.page_width * scale_factor
+        )  # unclear if this key is required
         pre_annotation["original_height"] = int(page_prediction.page_height * scale_factor)
         pre_annotation["image_rotation"] = 0
         pre_annotation["origin"] = "manual"
@@ -186,7 +192,12 @@ def create_ls_result(layer: LayerPrediction, page_prediction: PagePredictions, v
 
 
 def create_metadata_ls_result(
-    metadata_prediction: BoreholeMetaData, page_prediction: PagePredictions, value: dict, label: str, metadata_id: str, scale_factor: float
+    metadata_prediction: BoreholeMetaData,
+    page_prediction: PagePredictions,
+    value: dict,
+    label: str,
+    metadata_id: str,
+    scale_factor: float,
 ) -> list[dict]:
     """Generate the label-studio predictions object for a single metadata object and label.
 
@@ -208,7 +219,9 @@ def create_metadata_ls_result(
         pre_annotation["id"] = metadata_id
         pre_annotation["type"] = _type
         pre_annotation["value"] = value.copy()
-        pre_annotation["original_widht"] = int(page_prediction.page_width * scale_factor)
+        pre_annotation["original_width"] = int(
+            page_prediction.page_width * scale_factor
+        )  # unclear if this key is required
         pre_annotation["original_height"] = int(page_prediction.page_height * scale_factor)
         pre_annotation["image_rotation"] = 0
         pre_annotation["origin"] = "manual"

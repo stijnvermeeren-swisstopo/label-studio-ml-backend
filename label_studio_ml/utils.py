@@ -7,7 +7,6 @@ from typing import List
 
 from label_studio_tools.core.utils.params import get_env
 from label_studio_tools.core.utils.io import get_local_path
-from label_studio_sdk.label_interface import LabelInterface
 
 DATA_UNDEFINED_NAME = '$undefined$'
 

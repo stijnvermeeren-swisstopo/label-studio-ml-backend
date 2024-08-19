@@ -12,24 +12,35 @@ Instead, you can [import preannotated data](https://labelstud.io/guide/predictio
 
 ### 1. Installation
 
-Download and install `label-studio-ml` from the repository:
+Download and install `label-studio-ml-backend` from the repository:
 
 ```bash
-git clone https://github.com/redur/label-studio-ml-backend.git
+git clone https://github.com/stijnvermeeren-swisstopo/label-studio-ml-backend.git
 ```
 
 The code comes with two different ml-models that have their own respective endpoint. The directory structure for both models are the same. Information regarding the respective ML Models are found in their readmes located in the respective directories.
 
+Furthermore, when installing the code, the two ML models will install the specified version (by default, the latest version of the `main` branch). The backend is downloading the code from the source in the following file: `label_studio_ml/text_extractor/requirements.txt`  and `label_studio_ml/boreholes_backend/requirements.txt`
+
 ### 2. Prepare the services
-The ML Models require the data available in their respective container. Therefore we need to ensure that the right directories are mounted. (Note: this should be deprecated once we move to S3 datastorage.).
+The ML Models require the data available in their respective container. Therefore we need to ensure that the right directories are mounted. (Note: this should be deprecated once we move to S3 data storage).
 
 The `stratigraphy-ml-backend` needs the original pdf files used for the stratigraphy algorithm. Create a directory containing the files and add it in the `docker-compose.yml` for the service `stratigraphy-ml-backend`.
 
 The `text-extractor` service requires the png files of the extracted layers from the stratigraphy algorithm. Place the corresponding files in a directory and mount it in the `docker-compose.yml` for the `text-extractor` service.
 
+### 2. Download and provide the data
+See README in the https://github.com/stijnvermeeren-swisstopo/label-studio project.
+
 ### 3. Run the services
-Run `docker-compose build` and `docker-compose up` to run both services.
-Two endpoints will be created. The `stratigraphy-ml-backend` will listen on port `9090` and `text-extractor` will listen on port `9095`. You can now go to your label-studio front end and add the ML Backends in the UI. Note: You will have to find the IP adress of the docker containers first. You can find them in the logs. If you run them locally, it is your localhost.
+Run `sudo docker compose build` and `sudo docker compose up` to run both services.
+Two endpoints will be created. The `stratigraphy-ml-backend` will listen on port `9090` and `text-extractor` will listen on port `9095`. You can now go to your label-studio front end and add the ML Backends in the UI. Note: You will have to find the IP address of the docker containers first. You can find them in the logs. If you run them locally, it is your localhost.
+
+## Functionality overview
+
+The diagram below should give you a feeling about how the information flows in Label Studio between the user's input and the displayed annotated borehole profile.
+
+![](assets/img/information-flow.png)
 
 
 ## Extend / Adjust the Backend

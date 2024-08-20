@@ -3,7 +3,7 @@
 import logging
 import uuid
 
-from stratigraphy.util.predictions import BoreholeMetaData, FilePredictions, LayerPrediction, PagePredictions
+from stratigraphy.util.predictions import BoreholeMetaData, FilePredictions, LayerPrediction
 
 logger = logging.getLogger(__name__)
 
@@ -13,15 +13,15 @@ def convert_to_ls(pixel_position: int, original_length: int):
     return 100 * pixel_position / original_length
 
 
-def build_model_predictions(prediction: FilePredictions, page_number: int, ls_page_width: int) -> list[dict]:
+def build_model_predictions(file_predictions: FilePredictions, page_number: int, ls_page_width: int) -> list[dict]:
     """Build the label-studio predictions object from the stratygraphy.prediction.PagePrediction object.
 
     Note: Could become a method of the PagePrediction class.
 
     Args:
         prediction (FilePredictions): The prediction object from the stratigraphy pipeline.
-        page_number (int): The page number to extract the predictions from.
-        ls_page_width (int): The page width as obtained by label_studio. Differes by a scaling factor from the page
+        page_number (int): The page number to extract the predictions from. 0-based.
+        ls_page_width (int): The page width as obtained by label_studio. Differs by a scaling factor from the page
                              width in the predictions object.
 
     Returns:
@@ -29,48 +29,48 @@ def build_model_predictions(prediction: FilePredictions, page_number: int, ls_pa
     """
     pre_annotation_result = []
     layers_with_depth_intervals = []
-    page_prediction = prediction.pages[page_number]
-    scale_factor = ls_page_width / page_prediction.page_width
+    scale_factor = ls_page_width / file_predictions.page_sizes[page_number]["width"]
 
     # extract metadata. For now coordinates only
-    metadata_prediction = prediction.metadata
+    metadata_prediction = file_predictions.metadata
     coordinates = metadata_prediction.coordinates
     if coordinates is not None and page_number + 1 == coordinates.page:
         label = "Coordinates"
         value = {
-            "x": convert_to_ls(coordinates.rect.x0, page_prediction.page_width),
-            "y": convert_to_ls(coordinates.rect.y0, page_prediction.page_height),
+            "x": convert_to_ls(coordinates.rect.x0, file_predictions.page_sizes[page_number]["width"]),
+            "y": convert_to_ls(coordinates.rect.y0, file_predictions.page_sizes[page_number]["height"]),
             "width": convert_to_ls(
                 coordinates.rect.width,
-                page_prediction.page_width,
+                file_predictions.page_sizes[page_number]["width"],
             ),
             "height": convert_to_ls(
                 coordinates.rect.height,
-                page_prediction.page_height,
+                file_predictions.page_sizes[page_number]["height"],
             ),
             "rotation": 0,
         }
         metadata_id = uuid.uuid4().hex
         pre_annotation_result.extend(
             create_metadata_ls_result(
-                metadata_prediction, page_prediction, value, label, metadata_id=metadata_id, scale_factor=scale_factor
+                metadata_prediction, file_predictions, page_number, value, label, metadata_id=metadata_id, scale_factor=scale_factor
             )
         )
 
     # extract layers
-    for layer in page_prediction.layers:
+    layers = filter_layers_by_page(file_predictions.layers, page_number)
+    for layer in layers:
         for label in ["Material Description", "Depth Interval"]:
             if label == "Material Description":
                 value = {
-                    "x": convert_to_ls(layer.material_description.rect.x0, page_prediction.page_width),
-                    "y": convert_to_ls(layer.material_description.rect.y0, page_prediction.page_height),
+                    "x": convert_to_ls(layer.material_description.rect.x0, file_predictions.page_sizes[page_number]["width"]),
+                    "y": convert_to_ls(layer.material_description.rect.y0, file_predictions.page_sizes[page_number]["height"]),
                     "width": convert_to_ls(
                         layer.material_description.rect.width,
-                        page_prediction.page_width,
+                        file_predictions.page_sizes[page_number]["width"],
                     ),
                     "height": convert_to_ls(
                         layer.material_description.rect.height,
-                        page_prediction.page_height,
+                        file_predictions.page_sizes[page_number]["height"],
                     ),
                     "rotation": 0,
                 }
@@ -81,18 +81,18 @@ def build_model_predictions(prediction: FilePredictions, page_number: int, ls_pa
                 elif layer.depth_interval.start is None and layer.depth_interval.end is not None:
                     layers_with_depth_intervals.append(layer.id.hex)
                     value = {
-                        "x": convert_to_ls(layer.depth_interval.end.rect.x0, page_prediction.page_width),
+                        "x": convert_to_ls(layer.depth_interval.end.rect.x0, file_predictions.page_sizes[page_number]["width"]),
                         "y": convert_to_ls(
                             layer.depth_interval.end.rect.y0,
-                            page_prediction.page_height,
+                            file_predictions.page_sizes[page_number]["height"],
                         ),
                         "width": convert_to_ls(
                             layer.depth_interval.end.rect.width,
-                            page_prediction.page_width,
+                            file_predictions.page_sizes[page_number]["width"],
                         ),
                         "height": convert_to_ls(
                             layer.depth_interval.end.rect.height,
-                            page_prediction.page_height,
+                            file_predictions.page_sizes[page_number]["height"],
                         ),
                         "rotation": 0,
                     }
@@ -102,19 +102,19 @@ def build_model_predictions(prediction: FilePredictions, page_number: int, ls_pa
                     value = {
                         "x": convert_to_ls(
                             layer.depth_interval.background_rect.x0,
-                            page_prediction.page_width,
+                            file_predictions.page_sizes[page_number]["width"],
                         ),
                         "y": convert_to_ls(
                             layer.depth_interval.background_rect.y0,
-                            page_prediction.page_height,
+                            file_predictions.page_sizes[page_number]["height"],
                         ),
                         "width": convert_to_ls(
                             layer.depth_interval.background_rect.width,
-                            page_prediction.page_width,
+                            file_predictions.page_sizes[page_number]["width"],
                         ),
                         "height": convert_to_ls(
                             layer.depth_interval.background_rect.height,
-                            page_prediction.page_height,
+                            file_predictions.page_sizes[page_number]["height"],
                         ),
                         "rotation": 0,
                     }
@@ -123,7 +123,7 @@ def build_model_predictions(prediction: FilePredictions, page_number: int, ls_pa
                     logger.warning(f"Depth interval for layer {layer.id.hex} is not complete.")
                     continue
 
-            pre_annotation_result.extend(create_ls_result(layer, page_prediction, value, label, scale_factor))
+            pre_annotation_result.extend(create_ls_result(layer, file_predictions, page_number, value, label, scale_factor))
 
     for layer_id in layers_with_depth_intervals:
         relation = {
@@ -140,14 +140,26 @@ def build_model_predictions(prediction: FilePredictions, page_number: int, ls_pa
     return [model_predictions]
 
 
+def filter_layers_by_page(layers: list[LayerPrediction], page_number: int) -> list[LayerPrediction]:
+    """Filter layers by page number.
+    
+    Args:
+        layers (list[LayerPrediction]): The list of layer predictions.
+        page_number (int): The page number to filter by. 0-based.
+
+    Returns:
+        list[LayerPrediction]: The filtered list of layer predictions
+    """
+    return [layer for layer in layers if layer.material_description.page_number == page_number + 1]
+
 def create_ls_result(
-    layer: LayerPrediction, page_prediction: PagePredictions, value: dict, label: str, scale_factor: float
+    layer: LayerPrediction, file_prediction: FilePredictions, page_number: int, value: dict, label: str, scale_factor: float
 ) -> list[dict]:
     """Generate the label-studio predictions object for a single layer and label.
 
     Args:
         layer (LayerPrediction): The layer prediction object.
-        page_prediction (PagePredictions): The page prediction object.
+        file_prediction (FilePredictions): The page prediction object.
         value (dict): The value object for the label.
         label (str): The label name.
         scale_factor (float): Scaling factor applied on the png images shown in label-studio.
@@ -163,9 +175,9 @@ def create_ls_result(
         pre_annotation["type"] = _type
         pre_annotation["value"] = value.copy()
         pre_annotation["original_width"] = int(
-            page_prediction.page_width * scale_factor
+            file_prediction.page_sizes[page_number]["width"] * scale_factor
         )  # unclear if this key is required
-        pre_annotation["original_height"] = int(page_prediction.page_height * scale_factor)
+        pre_annotation["original_height"] = int(file_prediction.page_sizes[page_number]["height"] * scale_factor)
         pre_annotation["image_rotation"] = 0
         pre_annotation["origin"] = "manual"
         if _type == "rectangle":
@@ -193,7 +205,8 @@ def create_ls_result(
 
 def create_metadata_ls_result(
     metadata_prediction: BoreholeMetaData,
-    page_prediction: PagePredictions,
+    file_prediction: FilePredictions,
+    page_number: int,
     value: dict,
     label: str,
     metadata_id: str,
@@ -203,7 +216,8 @@ def create_metadata_ls_result(
 
     Args:
         metadata_prediction (BoreholeMetaData): The metadata_prediction prediction object.
-        page_prediction (PagePredictions): The page prediction object.
+        file_prediction (FilePredictions): The file prediction object.
+        page_number (int): The page number to filter by. 0-based.
         value (dict): The value object for the label.
         label (str): The label name.
         metadata_id (str): The id of the metadata object.
@@ -220,9 +234,9 @@ def create_metadata_ls_result(
         pre_annotation["type"] = _type
         pre_annotation["value"] = value.copy()
         pre_annotation["original_width"] = int(
-            page_prediction.page_width * scale_factor
+            file_prediction.page_sizes[page_number]["width"] * scale_factor
         )  # unclear if this key is required
-        pre_annotation["original_height"] = int(page_prediction.page_height * scale_factor)
+        pre_annotation["original_height"] = int(file_prediction.page_sizes[page_number]["height"] * scale_factor)
         pre_annotation["image_rotation"] = 0
         pre_annotation["origin"] = "manual"
         if _type == "rectangle":
